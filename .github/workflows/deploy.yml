@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/devops-assignment/app
+            git pull origin main
+            sudo docker build -t devops-app .
+            sudo docker stop devops-app || true
+            sudo docker rm devops-app || true
+            sudo docker run -d --name devops-app -p 80:3000 --restart unless-stopped devops-app
